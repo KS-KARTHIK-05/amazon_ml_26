@@ -1,0 +1,27 @@
+{
+  "peak_rss_gib": 1.151,
+  "seed": 42,
+  "split": "test",
+  "stages": {
+    "ingest_S1": {
+      "out_path": "artifacts/normalized/test_source1.parquet",
+      "row_count": 1732544,
+      "seconds": 2.78
+    },
+    "ingest_S2": {
+      "out_path": "artifacts/normalized/test_source2.parquet",
+      "row_count": 4887273,
+      "seconds": 7.95
+    },
+    "ingest_S3": {
+      "out_path": "artifacts/normalized/test_source3.parquet",
+      "row_count": 5082316,
+      "seconds": 8.15
+    },
+    "s1_country_index": {
+      "count": 1732544,
+      "seconds": 2.07
+    }
+  },
+  "total_seconds": 20.95
+}

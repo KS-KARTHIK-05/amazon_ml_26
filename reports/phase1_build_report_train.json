@@ -1,0 +1,53 @@
+{
+  "peak_rss_gib": 5.041,
+  "seed": 42,
+  "split": "train",
+  "stages": {
+    "assign_splits": {
+      "counts": {
+        "holdout": 220683,
+        "train": 1765456,
+        "tuning": 220682
+      },
+      "family_count": 2206821,
+      "out_path": "artifacts/splits/train_families.json",
+      "seconds": 10.73
+    },
+    "build_families": {
+      "family_count": 2206821,
+      "s1_count": 2206821,
+      "seconds": 9.55
+    },
+    "ingest_S1": {
+      "out_path": "artifacts/normalized/train_source1.parquet",
+      "row_count": 2206821,
+      "seconds": 3.41
+    },
+    "ingest_S2": {
+      "out_path": "artifacts/normalized/train_source2.parquet",
+      "row_count": 5034616,
+      "seconds": 7.93
+    },
+    "ingest_S3": {
+      "out_path": "artifacts/normalized/train_source3.parquet",
+      "row_count": 5285603,
+      "seconds": 8.01
+    },
+    "multi_owner_targets": {
+      "count": 0,
+      "examples": {}
+    },
+    "parse_ground_truth": {
+      "edge_count": 7638365,
+      "error_count": 0,
+      "s1_count": 2206821,
+      "seconds": 12.02,
+      "singleton_count": 123247
+    },
+    "s1_country_index": {
+      "count": 2206821,
+      "seconds": 2.56
+    }
+  },
+  "total_seconds": 59.6
+}
