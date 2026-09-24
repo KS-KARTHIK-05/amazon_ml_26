@@ -1,0 +1,144 @@
+{
+  "audit_entities": 50000,
+  "country_counts_full_files": {
+    "test_source1": {
+      "France": 259452,
+      "India": 809986,
+      "US": 663106
+    },
+    "test_source2": {
+      "France": 703378,
+      "India": 2312565,
+      "US": 1871330
+    },
+    "test_source3": {
+      "France": 731615,
+      "India": 2405000,
+      "US": 1945701
+    },
+    "train_source1": {
+      "India": 883188,
+      "US": 1323633
+    },
+    "train_source2": {
+      "India": 2017799,
+      "US": 3016817
+    },
+    "train_source3": {
+      "India": 2115547,
+      "US": 3170056
+    }
+  },
+  "diagnostics_audit_only": {
+    "exact_same_name_different_raw_address_pairs": 7949,
+    "exact_same_name_pairs": 7949,
+    "linked_pairs": 172910,
+    "us_linked_pairs": 103322,
+    "us_pairs_with_both_cities_parsed_same_state": 66882,
+    "us_pairs_with_both_states_parsed": 97595
+  },
+  "limitations": [
+    "Variation labels overlap and are heuristic.",
+    "Country counts scan full files; variation analysis uses a random S1 audit sample.",
+    "Diverse final selection is intentionally biased; do not estimate prevalence or model accuracy from it.",
+    "Script changes do not prove phonetic transliteration or semantic equivalence.",
+    "Low address overlap and parsed state/city conflicts do not prove a business moved.",
+    "No test ground truth is available; test labels are counted only.",
+    "Same-name collision counts apply only to normalized names present in the audit, not all possible name groups."
+  ],
+  "output_record_counts": {
+    "same_name_different_entities.tsv": 200,
+    "sampled_source1.tsv": 50,
+    "sampled_source2.tsv": 83,
+    "sampled_source3.tsv": 91,
+    "sampled_truth.tsv": 50,
+    "variation_categories.tsv": 40,
+    "variation_pairs.tsv": 174
+  },
+  "requested_audit_entities": 50000,
+  "same_name_scan_for_audited_names_only": {
+    "additional_s1_rows_with_audited_name_and_different_normalized_address": 241719,
+    "different_us_state_candidates": 123428
+  },
+  "seed": 42,
+  "selected_entities": 50,
+  "selected_singleton_ids": [
+    "S1-171160408",
+    "S1-184679021",
+    "S1-362894724"
+  ],
+  "uncovered_observed_categories": [],
+  "variation_entity_counts_audit_only": {
+    "address_abbreviation_or_state_expansion": 15481,
+    "address_case_punctuation_spacing": 8109,
+    "address_component_addition_or_removal": 20699,
+    "address_component_reordering": 9786,
+    "address_embedded_null_marker": 2269,
+    "address_landmark_marker_change": 1086,
+    "address_leading_zero_number_format": 3034,
+    "address_low_lexical_overlap": 3190,
+    "address_missing": 7196,
+    "address_numeric_tokens_changed": 27532,
+    "address_possible_typo": 31529,
+    "address_script_change": 10883,
+    "address_unit_po_box_change": 8278,
+    "name_abbreviation_equivalent": 4377,
+    "name_accent_change": 6430,
+    "name_case_only": 9316,
+    "name_digit_letter_substitution": 2522,
+    "name_honorific_added": 3251,
+    "name_initialism_candidate": 265,
+    "name_joined_or_split_words": 1836,
+    "name_legal_suffix_change": 34107,
+    "name_low_lexical_overlap": 17895,
+    "name_mixed_scripts": 843,
+    "name_numeric_identifier_added": 1693,
+    "name_possible_typo": 27724,
+    "name_punctuation_spacing": 15896,
+    "name_repeated_word_added": 3961,
+    "name_script_change_possible_transliteration": 6224,
+    "name_token_addition_or_removal": 29861,
+    "name_trade_alias_marker": 1614,
+    "name_url_or_handle": 8717,
+    "name_word_reordering": 8612,
+    "other_text_variation": 774,
+    "singleton_control": 2800,
+    "us_city_conflict_candidate": 4219
+  },
+  "variation_pair_counts_audit_only": {
+    "address_abbreviation_or_state_expansion": 27286,
+    "address_case_punctuation_spacing": 10424,
+    "address_component_addition_or_removal": 32823,
+    "address_component_reordering": 14005,
+    "address_embedded_null_marker": 4360,
+    "address_landmark_marker_change": 1669,
+    "address_leading_zero_number_format": 5408,
+    "address_low_lexical_overlap": 4481,
+    "address_missing": 7743,
+    "address_numeric_tokens_changed": 56132,
+    "address_possible_typo": 62708,
+    "address_script_change": 15542,
+    "address_unit_po_box_change": 17374,
+    "name_abbreviation_equivalent": 4953,
+    "name_accent_change": 6921,
+    "name_case_only": 10402,
+    "name_digit_letter_substitution": 2617,
+    "name_honorific_added": 3685,
+    "name_initialism_candidate": 265,
+    "name_joined_or_split_words": 1986,
+    "name_legal_suffix_change": 65511,
+    "name_low_lexical_overlap": 26931,
+    "name_mixed_scripts": 904,
+    "name_numeric_identifier_added": 1718,
+    "name_possible_typo": 41440,
+    "name_punctuation_spacing": 19265,
+    "name_repeated_word_added": 4131,
+    "name_script_change_possible_transliteration": 12713,
+    "name_token_addition_or_removal": 46909,
+    "name_trade_alias_marker": 1614,
+    "name_url_or_handle": 9582,
+    "name_word_reordering": 9631,
+    "other_text_variation": 819,
+    "us_city_conflict_candidate": 7371
+  }
+}

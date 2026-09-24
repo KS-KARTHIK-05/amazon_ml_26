@@ -1,0 +1,41 @@
+variation	audit_pairs	audit_entities	selected_entities	definition
+name_case_only	10402	9316	7	Different raw names, identical after case folding.
+name_punctuation_spacing	19265	15896	13	Case-folded names differ but alphanumeric token sequences agree.
+name_accent_change	6921	6430	7	Token sequences differ but agree after Unicode accent removal.
+name_script_change_possible_transliteration	12713	6224	8	Unicode letter scripts differ; may be transliteration or translation, not verified.
+name_mixed_scripts	904	843	2	Matched name contains letters from multiple scripts.
+name_legal_suffix_change	65511	34107	35	Legal-form token counts differ; may overlap other name changes.
+name_abbreviation_equivalent	4953	4377	3	Name tokens become equal under the small documented abbreviation map.
+name_word_reordering	9631	8612	10	Same token multiset but different sequence.
+name_repeated_word_added	4131	3961	5	A matched-name token of at least two characters repeats more often than in S1; single-letter initial fragments are excluded.
+name_token_addition_or_removal	46909	29861	25	One name's token multiset is a strict subset of the other.
+name_possible_typo	41440	27724	29	Same-script nonidentical normalized names have character similarity >= 0.72; excludes pure reorder/subset cases.
+name_digit_letter_substitution	2617	2522	3	A differing token agrees after 0->o, 1->i, 3->e, 4->a, 5->s, 7->t substitution.
+name_url_or_handle	9582	8717	12	Changed name includes a URL, .com/.in domain, or hashtag marker.
+name_numeric_identifier_added	1718	1693	2	Matched name has a standalone digit sequence absent from S1; possible appended identifier.
+name_joined_or_split_words	1986	1836	2	Name token sequences differ but concatenating their normalized tokens yields identical text.
+name_initialism_candidate	265	265	2	Matched name reduces to one 2-8 character token equal to the initials of S1 tokens after removing legal-form tokens.
+name_honorific_added	3685	3251	5	Matched name adds Mr/Mrs/Ms/Dr/Shri/Sri tokens absent from S1.
+name_trade_alias_marker	1614	1614	4	Changed name includes DBA, formerly, or trading-as text.
+name_low_lexical_overlap	26931	17895	25	Nonempty normalized names share at most 25% of their token union.
+name_missing	0	0	0	One name is empty or a whole-field null marker.
+address_missing	7743	7196	10	One address is empty or a whole-field null marker.
+address_case_punctuation_spacing	10424	8109	5	Different raw addresses have the same alphanumeric token sequence.
+address_script_change	15542	10883	11	Address Unicode letter scripts differ; not a verified transliteration.
+address_abbreviation_or_state_expansion	27286	15481	15	Raw address token multiset differs but agrees after abbreviation/US-state normalization.
+address_component_reordering	14005	9786	8	Normalized address tokens have the same multiset but a different sequence.
+address_component_addition_or_removal	32823	20699	19	One normalized address token multiset is a strict subset of the other.
+address_numeric_tokens_changed	56132	27532	28	Nonempty addresses have different digit-token multisets; may be formatting, unit, postcode, or house-number changes.
+address_unit_po_box_change	17374	8278	8	Apartment/unit/suite/floor/PO-box/PMB marker counts differ.
+address_embedded_null_marker	4360	2269	5	Address contains null/none/nan as a token within other text.
+address_landmark_marker_change	1669	1086	2	Near/opposite/opp/behind/beside landmark-marker counts differ.
+address_leading_zero_number_format	5408	3034	7	Digit-token sequences differ but agree after stripping leading zeros.
+address_possible_typo	62708	31529	27	Same-script normalized addresses differ with character similarity >= 0.80, excluding identical token multisets.
+address_low_lexical_overlap	4481	3190	5	Nonempty addresses share at most 25% of their normalized token union; not proof of relocation.
+us_state_conflict_candidate	0	0	0	Each US address has one unambiguous comma-delimited state token and they disagree; review manually.
+us_city_conflict_candidate	7371	4219	6	States agree, conservative city extraction succeeds, and city similarity is < 0.75; review manually.
+country_mismatch	0	0	0	Ground-truth-linked records have different case-folded country labels.
+country_missing	0	0	0	At least one country is empty or a whole-field null marker.
+unchanged_record	0	0	0	Name, address, and country are exactly identical.
+other_text_variation	819	774	2	Text differs but no other detector fired.
+singleton_control	0	2800	3	S1 has an empty ground-truth match list; retained as a control.

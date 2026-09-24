@@ -1,0 +1,84 @@
+{
+  "sample_seed": 2026,
+  "sample_rows": 270,
+  "rows_per_source_country": 30,
+  "full_file_country_counts": {
+    "S1/France": 259452,
+    "S1/India": 809986,
+    "S1/US": 663106,
+    "S2/France": 703378,
+    "S2/India": 2312565,
+    "S2/US": 1871330,
+    "S3/France": 731615,
+    "S3/India": 2405000,
+    "S3/US": 1945701
+  },
+  "query_count": 6,
+  "candidate_count": 60,
+  "warning": "No test ground truth exists. Scores are token-overlap demonstration scores, not probabilities; candidates are not confirmed matches.",
+  "sample_observations": {
+    "S1/France": {
+      "count": 30,
+      "empty_address": 0,
+      "non_latin_name": 0,
+      "accented_latin_name": 3,
+      "embedded_null_address": 0
+    },
+    "S1/India": {
+      "count": 30,
+      "empty_address": 0,
+      "non_latin_name": 0,
+      "accented_latin_name": 0,
+      "embedded_null_address": 0
+    },
+    "S1/US": {
+      "count": 30,
+      "empty_address": 0,
+      "non_latin_name": 0,
+      "accented_latin_name": 0,
+      "embedded_null_address": 0
+    },
+    "S2/France": {
+      "count": 30,
+      "empty_address": 1,
+      "non_latin_name": 0,
+      "accented_latin_name": 8,
+      "embedded_null_address": 0
+    },
+    "S2/India": {
+      "count": 30,
+      "empty_address": 1,
+      "non_latin_name": 7,
+      "accented_latin_name": 2,
+      "embedded_null_address": 0
+    },
+    "S2/US": {
+      "count": 30,
+      "empty_address": 0,
+      "non_latin_name": 0,
+      "accented_latin_name": 0,
+      "embedded_null_address": 2
+    },
+    "S3/France": {
+      "count": 30,
+      "empty_address": 0,
+      "non_latin_name": 0,
+      "accented_latin_name": 9,
+      "embedded_null_address": 0
+    },
+    "S3/India": {
+      "count": 30,
+      "empty_address": 0,
+      "non_latin_name": 4,
+      "accented_latin_name": 1,
+      "embedded_null_address": 1
+    },
+    "S3/US": {
+      "count": 30,
+      "empty_address": 3,
+      "non_latin_name": 0,
+      "accented_latin_name": 2,
+      "embedded_null_address": 1
+    }
+  }
+}
