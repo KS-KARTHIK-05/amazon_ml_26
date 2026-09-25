@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Large / regenerable data (never commit raw dataset or derived caches)
+student_resource/dataset/train/
+student_resource/dataset/test/
+student_resource/dataset/sampled/
+6ab10eb3b23ba_student_resource/
+
+# Runtime artifacts (large, regenerable, run-specific)
+artifacts/
+output/
+cache/
+*.jsonl.gz
+*.parquet
+*.index
+*.bin
+*.pt
+*.pkl
+*.model
+
+# Jupyter / OS
+.ipynb_checkpoints/
+.DS_Store
+
+# Logs
+*.log
