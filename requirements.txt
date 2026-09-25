@@ -1,0 +1,8 @@
+polars==1.44.2
+numpy==2.5.3
+scipy==1.18.1
+rapidfuzz==3.14.6
+lightgbm==4.7.0
+indic-transliteration==2.3.82
+sparse-dot-topn==1.2.0
+tqdm==4.70.1
