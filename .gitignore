@@ -15,13 +15,3 @@ output/
 !requirements.txt
 *.joblib
 *.log
-
-# Early experiments superseded by the final pipeline (not imported by it)
-src/pipeline.py
-src/blocking/run_blocking.py
-src/blocking/tfidf_blocker.py
-src/matching/baseline_classifier.py
-src/matching/features.py
-src/decision/threshold.py
-src/eval/recall.py
-src/preprocess/normalize.py
