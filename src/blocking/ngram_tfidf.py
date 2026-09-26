@@ -13,6 +13,8 @@ import numpy as np
 import polars as pl
 import scipy.sparse as sp
 
+CHUNK = 1_000_000
+
 
 def _grams(strings: pl.Series, n: int, max_len: int) -> pl.DataFrame:
     """Long table (row, gram) of character n-grams of ' ' + s + ' '."""
@@ -34,9 +36,13 @@ class NgramTfidf:
     def fit(self, strings: pl.Series) -> "NgramTfidf":
         n_docs = len(strings)
         max_df = self.max_df if self.max_df >= 1 else int(self.max_df * n_docs)
+        # document frequency accumulated over row chunks: the sliced n-gram
+        # intermediates for millions of names would otherwise peak at ~20GB
+        counts = []
+        for start in range(0, n_docs, CHUNK):
+            counts.append(_grams(strings.slice(start, CHUNK), self.n, self.max_len).unique().group_by("gram").len())
         df = (
-            _grams(strings, self.n, self.max_len).unique()
-            .group_by("gram").len().rename({"len": "df"})
+            pl.concat(counts).group_by("gram").agg(pl.col("len").sum().alias("df"))
             .filter((pl.col("df") >= self.min_df) & (pl.col("df") <= max_df))
         )
         self.vocab = df.with_row_index("col").with_columns(
@@ -45,6 +51,8 @@ class NgramTfidf:
         return self
 
     def transform(self, strings: pl.Series) -> sp.csr_matrix:
+        if len(strings) > CHUNK:
+            return sp.vstack([self.transform(strings.slice(i, CHUNK)) for i in range(0, len(strings), CHUNK)], format="csr")
         tf = _grams(strings, self.n, self.max_len).group_by(["row", "gram"]).len().rename({"len": "tf"})
         w = (
             tf.join(self.vocab, on="gram")

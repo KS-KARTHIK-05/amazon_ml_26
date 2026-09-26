@@ -19,7 +19,35 @@ from rapidfuzz import fuzz
 from rapidfuzz.distance import JaroWinkler
 from rapidfuzz.process import cpdist
 
-REC_COLS = ["entity_id", "source", "name_norm", "name_core", "addr_norm", "addr_numbers", "addr_last"]
+REC_COLS = ["entity_id", "source", "name_norm", "name_core", "addr_norm", "addr_numbers", "addr_last",
+            "core_n_s1", "tok_min_df_s1"]
+BASE_COLS = REC_COLS[:7]
+
+
+def add_s1_name_stats(rec: pl.DataFrame) -> pl.DataFrame:
+    """Name-uniqueness attributes relative to the S1 records of the same split
+    and country (no labels involved, so identical at train and test time):
+    - core_n_s1: how many S1 records have exactly this core name
+    - tok_min_df_s1: in how many S1 names this record's rarest core token appears
+    A lone typo'd record with no address is only trustworthy if its name is
+    rare among S1s; a record whose name several S1s share is ambiguous."""
+    s1 = rec.filter(pl.col("source") == "S1")
+    core_n = s1.group_by("name_core").len().rename({"len": "core_n_s1"})
+    tok_df = (
+        s1.select(pl.col("entity_id"), pl.col("name_core").str.split(" ").list.unique().alias("t"))
+        .explode("t").filter(pl.col("t") != "").group_by("t").len().rename({"len": "df"})
+    )
+    min_df = (
+        rec.select("entity_id", pl.col("name_core").str.split(" ").list.unique().alias("t"))
+        .explode("t").filter(pl.col("t") != "")
+        .join(tok_df, on="t", how="left").fill_null(0)
+        .group_by("entity_id").agg(pl.col("df").min().alias("tok_min_df_s1"))
+    )
+    return (
+        rec.join(core_n, on="name_core", how="left")
+        .join(min_df, on="entity_id", how="left")
+        .with_columns(pl.col("core_n_s1").fill_null(0), pl.col("tok_min_df_s1").fill_null(-1))
+    )
 
 _STRING_FEATURES = [
     ("nc_ratio", fuzz.ratio, "name_core"),
@@ -39,7 +67,21 @@ FEATURES = [
     "nc_jacc", "num_inter", "num_jacc", "first_num_eq", "s1_has_num", "c_has_num",
     "last_eq", "c_addr_empty", "s1_addr_empty", "nc_len_s1", "nc_len_c", "nc_len_diff", "c_is_s3",
     "n_cands", "rank_cos", "rank_tset", "gap_cos", "gap_tset", "gap_ad_tset", "rank_combo",
+    # v2
+    "name_sim", "has_name_sim", "s_core_n_s1", "c_core_n_s1", "s_tok_min_df", "c_tok_min_df",
+    "name_num_conflict", "addr_num_conflict", "exact_core",
+    # v3: reverse (record -> S1) blocking evidence
+    "fwd_hit", "rev_queried", "rev_hit", "r_key_cos", "r_name_score", "r_addr_score", "r_conj_score", "r_rank",
 ]
+# values for pairs that did not come through the v3 merge (e.g. predict_pairs inputs):
+# found by forward blocking, not among the record's reverse top S1s
+REV_FEATURE_DEFAULTS = {"fwd_hit": 1.0, "rev_queried": 0.0, "rev_hit": 0.0, "r_key_cos": 0.0, "r_name_score": 0.0,
+                        "r_addr_score": 0.0, "r_conj_score": 0.0, "r_rank": 99.0}
+
+
+def _conflict(a: pl.Expr, b: pl.Expr) -> pl.Expr:
+    """1 when both sides carry numbers and share none (e.g. 'local 579' vs 'local 865')."""
+    return ((a.list.len() > 0) & (b.list.len() > 0) & (a.list.set_intersection(b).list.len() == 0)).cast(pl.Float32)
 
 
 def _prefixed(rec: pl.DataFrame, prefix: str, id_name: str) -> pl.DataFrame:
@@ -81,6 +123,14 @@ def build_features(pairs: pl.DataFrame, rec: pl.DataFrame, chunk: int = 4_000_00
         pl.col("c_name_core").str.len_chars().cast(pl.Float32).alias("nc_len_c"),
         (pl.col("c_source") == "S3").cast(pl.Float32).alias("c_is_s3"),
         pl.col("key_cos").fill_null(0.0),
+        pl.col("name_sim").is_not_null().cast(pl.Float32).alias("has_name_sim"),
+        pl.col("name_sim").fill_null(0.0),
+        pl.col("s_core_n_s1").cast(pl.Float32), pl.col("c_core_n_s1").cast(pl.Float32),
+        pl.col("s_tok_min_df_s1").cast(pl.Float32).alias("s_tok_min_df"),
+        pl.col("c_tok_min_df_s1").cast(pl.Float32).alias("c_tok_min_df"),
+        (pl.col("s_name_core") == pl.col("c_name_core")).cast(pl.Float32).alias("exact_core"),
+        _conflict(pl.col("s_name_core").str.extract_all(r"\d+"), pl.col("c_name_core").str.extract_all(r"\d+")).alias("name_num_conflict"),
+        _conflict(pl.col("s_addr_numbers"), pl.col("c_addr_numbers")).alias("addr_num_conflict"),
     ).with_columns((pl.col("nc_len_s1") - pl.col("nc_len_c")).abs().alias("nc_len_diff"))
 
     g = "s1_id"
@@ -93,4 +143,5 @@ def build_features(pairs: pl.DataFrame, rec: pl.DataFrame, chunk: int = 4_000_00
         (pl.col("ad_tset").max().over(g) - pl.col("ad_tset")).alias("gap_ad_tset"),
         (pl.col("nc_tset") + pl.col("ad_tset")).rank("min", descending=True).over(g).cast(pl.Float32).alias("rank_combo"),
     )
+    j = j.with_columns(pl.lit(v, dtype=pl.Float32).alias(k) for k, v in REV_FEATURE_DEFAULTS.items() if k not in j.columns)
     return j.select("s1_id", "cand_id", *[pl.col(f).cast(pl.Float32) for f in FEATURES])

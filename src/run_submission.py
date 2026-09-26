@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import gc
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -27,15 +28,16 @@ import polars as pl
 from src.blocking.blocker import block_partition
 from src.data.load import CACHE_ROOT
 from src.decision.writer import run_validator, write_candidate_pairs, write_matching_results
-from src.matching.pair_features import FEATURES, REC_COLS, build_features
+from src.matching.pair_features import BASE_COLS, FEATURES, add_s1_name_stats, build_features
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT_DIR = ROOT / "output"
-MODEL_DIR = ROOT / "models"
-WORK = CACHE_ROOT / "run"
-BLOCK_PARAMS = {"use_tfidf": 0}
-FIT_S1_PER_COUNTRY = 150_000
-HELD_S1_PER_COUNTRY = 50_000
+# run selection: v2 models/intermediates stay in models/ and cache/run_v2
+MODEL_DIR = ROOT / "models" / os.environ.get("ER_MODELS", "v3")
+WORK = CACHE_ROOT / os.environ.get("ER_RUN", "run_v3")
+BLOCK_PARAMS: dict = {}  # blocker defaults: keys + narrow name tf-idf channel
+FIT_S1_PER_COUNTRY = None   # None = every train S1 (needed for cross-S1 competition features)
+HELD_S1_PER_COUNTRY = None
 SEED = 42
 FEATURE_S1_CHUNK = 150_000
 
@@ -61,7 +63,7 @@ def _train_sample_ids() -> pl.DataFrame:
     parts = []
     for (country, fold), g in s1.group_by(["country", "fold"]):
         n = FIT_S1_PER_COUNTRY if fold == "fit" else HELD_S1_PER_COUNTRY
-        parts.append(g.sample(min(n, g.height), seed=SEED))
+        parts.append(g if n is None else g.sample(min(n, g.height), seed=SEED))
     out = pl.concat(parts)
     WORK.mkdir(parents=True, exist_ok=True)
     out.write_parquet(path)
@@ -88,7 +90,7 @@ def stage_block(split: str) -> None:
         cand = mc.filter(pl.col("source") != "S1")
         del mc
         _log(f"block {split}/{country}: {s1.height} S1 vs {cand.height} candidates")
-        pairs = block_partition(s1, cand, BLOCK_PARAMS).drop("name_sim")
+        pairs = block_partition(s1, cand, BLOCK_PARAMS)
         out.parent.mkdir(parents=True, exist_ok=True)
         pairs.write_parquet(out)
         _log(f"block {split}/{country}: {pairs.height} pairs ({pairs.height / max(s1.height, 1):.1f}/S1) in {time.time() - t0:.0f}s")
@@ -97,35 +99,37 @@ def stage_block(split: str) -> None:
 
 
 def stage_features(split: str) -> None:
+    """Pair features written as part files (one per chunk of S1 entities), so
+    no full-country feature table is ever held in memory."""
+    out_dir = WORK / split / "feats"
+    out_dir.mkdir(parents=True, exist_ok=True)
     for country in _countries(split):
-        out = WORK / split / f"feats_{country}.parquet"
-        if out.exists():
+        if (out_dir / f"{country}.done").exists():
             _log(f"features {split}/{country}: cached")
             continue
         t0 = time.time()
-        cols = REC_COLS + (["cluster_id"] if split == "train" else [])
-        rec = (
+        cols = BASE_COLS + (["cluster_id"] if split == "train" else [])
+        rec = add_s1_name_stats(
             pl.scan_parquet(CACHE_ROOT / split / "master_norm.parquet")
             .filter(pl.col("country") == country).select(cols).collect()
         )
         pairs = pl.read_parquet(WORK / split / f"cands_{country}.parquet")
-        # chunk by S1 entity (all of an S1's candidates stay in one chunk, so the
-        # per-S1 relative features are exact) to bound the text join's memory
         s1_ids = pairs.select("s1_id").unique(maintain_order=True)["s1_id"]
-        chunks = []
-        for start in range(0, len(s1_ids), FEATURE_S1_CHUNK):
+        n_rows = 0
+        for i, start in enumerate(range(0, len(s1_ids), FEATURE_S1_CHUNK)):
             sub = pairs.filter(pl.col("s1_id").is_in(s1_ids.slice(start, FEATURE_S1_CHUNK).implode()))
-            chunks.append(build_features(sub, rec))
+            feats = build_features(sub, rec)
+            if split == "train":
+                feats = feats.join(
+                    rec.select(pl.col("entity_id").alias("cand_id"), pl.col("cluster_id").alias("_cl")), on="cand_id", how="left"
+                ).with_columns((pl.col("_cl") == pl.col("s1_id")).fill_null(False).cast(pl.Int8).alias("label")).drop("_cl")
+            feats.with_columns(pl.lit(country).alias("country")).write_parquet(out_dir / f"{country}_{i:03d}.parquet")
+            n_rows += feats.height
+            del sub, feats
             gc.collect()
-        feats = pl.concat(chunks)
-        del chunks
-        if split == "train":
-            feats = feats.join(
-                rec.select(pl.col("entity_id").alias("cand_id"), pl.col("cluster_id").alias("_cl")), on="cand_id", how="left"
-            ).with_columns((pl.col("_cl") == pl.col("s1_id")).fill_null(False).cast(pl.Int8).alias("label")).drop("_cl")
-        feats.write_parquet(out)
-        _log(f"features {split}/{country}: {feats.height} rows in {time.time() - t0:.0f}s")
-        del rec, pairs, feats
+        (out_dir / f"{country}.done").touch()
+        _log(f"features {split}/{country}: {n_rows} rows in {time.time() - t0:.0f}s")
+        del rec, pairs
         gc.collect()
 
 
@@ -173,7 +177,7 @@ def stage_train() -> None:
 
     params = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=200,
                   feature_fraction=0.9, bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0,
-                  max_bin=63, device_type="gpu", verbose=-1, seed=SEED)
+                  max_bin=63, device_type="cpu", verbose=-1, seed=SEED)
     dtr = lgb.Dataset(tr.select(FEATURES).to_numpy(), tr["label"].to_numpy(), feature_name=FEATURES, free_raw_data=True)
     des = lgb.Dataset(es.select(FEATURES).to_numpy(), es["label"].to_numpy(), reference=dtr)
     t0 = time.time()
